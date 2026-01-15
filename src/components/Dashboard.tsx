@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { useInventory } from '../context/InventoryContext';
-import { useAuth } from '../context/AuthContext';
 import FileUpload from './FileUpload';
 import DataSummary from './DataSummary';
 import ProductSelector from './ProductSelector';
 import ProjectionChart from './ProjectionChart';
 import ProjectionTable from './ProjectionTable';
 import SettingsPanel from './SettingsPanel';
-import ChangePasswordModal from './auth/ChangePasswordModal';
 import { Button, Badge } from './ui';
 
 // Icons
@@ -63,19 +61,25 @@ type ViewMode = 'chart' | 'table' | 'both';
 
 interface DashboardProps {
   onAdminClick?: () => void;
+  user?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+  } | null;
+  isAdmin?: boolean;
+  onLogout?: () => void;
 }
 
-export default function Dashboard({ onAdminClick }: DashboardProps) {
+export default function Dashboard({ onAdminClick, user, isAdmin = false, onLogout }: DashboardProps) {
   const { state } = useInventory();
-  const { state: authState, logout, isAdmin } = useAuth();
   const [viewMode, setViewMode] = useState<ViewMode>('both');
   const [showSidebar, setShowSidebar] = useState(true);
   const [showSettings, setShowSettings] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   const hasData = state.projections.size > 0;
-  const user = authState.user;
+  const isStandaloneMode = !user;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -103,126 +107,130 @@ export default function Dashboard({ onAdminClick }: DashboardProps) {
               </div>
             </div>
 
-            {hasData && (
-              <div className="flex items-center gap-3">
-                {/* View mode toggle */}
-                <div className="hidden sm:flex items-center gap-1 p-1 bg-[var(--color-surface-elevated)] rounded-lg">
-                  <button
-                    onClick={() => setViewMode('chart')}
-                    className={`p-2 rounded-md transition-all ${
-                      viewMode === 'chart'
-                        ? 'bg-primary-500/20 text-primary-400'
-                        : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-                    }`}
-                    title="Chart view"
-                  >
-                    <ChartIcon />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('table')}
-                    className={`p-2 rounded-md transition-all ${
-                      viewMode === 'table'
-                        ? 'bg-primary-500/20 text-primary-400'
-                        : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-                    }`}
-                    title="Table view"
-                  >
-                    <TableIcon />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('both')}
-                    className={`p-2 rounded-md transition-all ${
-                      viewMode === 'both'
-                        ? 'bg-primary-500/20 text-primary-400'
-                        : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
-                    }`}
-                    title="Both views"
-                  >
-                    <GridIcon />
-                  </button>
-                </div>
-
-                {/* Settings toggle */}
-                <Button
-                  variant={showSettings ? 'primary' : 'secondary'}
-                  size="sm"
-                  onClick={() => setShowSettings(!showSettings)}
-                  className="hidden lg:flex"
-                >
-                  Settings
-                </Button>
-
-                {/* Stats */}
-                <div className="hidden md:flex items-center gap-2">
-                  <Badge variant="info">
-                    {state.projections.size} products
-                  </Badge>
-                  <Badge variant="success">
-                    {state.orders.length.toLocaleString()} orders
-                  </Badge>
-                </div>
-              </div>
-            )}
-
-            {/* User Menu */}
-            <div className="relative">
-              <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--color-surface-elevated)] hover:bg-[var(--color-border)] transition-colors"
-              >
-                <UserIcon />
-                <span className="hidden sm:inline text-sm font-medium">
-                  {user?.firstName}
-                </span>
-                <Badge variant={isAdmin ? 'danger' : 'default'} size="sm">
-                  {user?.role}
-                </Badge>
-              </button>
-
-              {showUserMenu && (
+            <div className="flex items-center gap-3">
+              {hasData && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setShowUserMenu(false)} 
-                  />
-                  <div className="absolute right-0 mt-2 w-56 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-lg z-50 animate-fade-in">
-                    <div className="p-3 border-b border-[var(--color-border)]">
-                      <p className="font-medium text-[var(--color-text)]">
-                        {user?.firstName} {user?.lastName}
-                      </p>
-                      <p className="text-sm text-[var(--color-text-muted)]">
-                        {user?.email}
-                      </p>
-                    </div>
-                    <div className="p-2">
-                      {isAdmin && onAdminClick && (
-                        <button
-                          onClick={() => { setShowUserMenu(false); onAdminClick(); }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-elevated)] rounded-md transition-colors"
-                        >
-                          <ShieldIcon />
-                          Admin Panel
-                        </button>
-                      )}
-                      <button
-                        onClick={() => { setShowUserMenu(false); setShowPasswordModal(true); }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-elevated)] rounded-md transition-colors"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                        </svg>
-                        Change Password
-                      </button>
-                      <button
-                        onClick={() => { setShowUserMenu(false); logout(); }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
-                      >
-                        <LogoutIcon />
-                        Sign Out
-                      </button>
-                    </div>
+                  {/* View mode toggle */}
+                  <div className="hidden sm:flex items-center gap-1 p-1 bg-[var(--color-surface-elevated)] rounded-lg">
+                    <button
+                      onClick={() => setViewMode('chart')}
+                      className={`p-2 rounded-md transition-all ${
+                        viewMode === 'chart'
+                          ? 'bg-primary-500/20 text-primary-400'
+                          : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                      }`}
+                      title="Chart view"
+                    >
+                      <ChartIcon />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('table')}
+                      className={`p-2 rounded-md transition-all ${
+                        viewMode === 'table'
+                          ? 'bg-primary-500/20 text-primary-400'
+                          : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                      }`}
+                      title="Table view"
+                    >
+                      <TableIcon />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('both')}
+                      className={`p-2 rounded-md transition-all ${
+                        viewMode === 'both'
+                          ? 'bg-primary-500/20 text-primary-400'
+                          : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'
+                      }`}
+                      title="Both views"
+                    >
+                      <GridIcon />
+                    </button>
+                  </div>
+
+                  {/* Settings toggle */}
+                  <Button
+                    variant={showSettings ? 'primary' : 'secondary'}
+                    size="sm"
+                    onClick={() => setShowSettings(!showSettings)}
+                    className="hidden lg:flex"
+                  >
+                    Settings
+                  </Button>
+
+                  {/* Stats */}
+                  <div className="hidden md:flex items-center gap-2">
+                    <Badge variant="info">
+                      {state.projections.size} products
+                    </Badge>
+                    <Badge variant="success">
+                      {state.orders.length.toLocaleString()} orders
+                    </Badge>
                   </div>
                 </>
+              )}
+
+              {/* User Menu - only show if authenticated */}
+              {!isStandaloneMode && user && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[var(--color-surface-elevated)] hover:bg-[var(--color-border)] transition-colors"
+                  >
+                    <UserIcon />
+                    <span className="hidden sm:inline text-sm font-medium">
+                      {user.firstName}
+                    </span>
+                    <Badge variant={isAdmin ? 'danger' : 'default'} size="sm">
+                      {user.role}
+                    </Badge>
+                  </button>
+
+                  {showUserMenu && (
+                    <>
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setShowUserMenu(false)} 
+                      />
+                      <div className="absolute right-0 mt-2 w-56 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-lg z-50 animate-fade-in">
+                        <div className="p-3 border-b border-[var(--color-border)]">
+                          <p className="font-medium text-[var(--color-text)]">
+                            {user.firstName} {user.lastName}
+                          </p>
+                          <p className="text-sm text-[var(--color-text-muted)]">
+                            {user.email}
+                          </p>
+                        </div>
+                        <div className="p-2">
+                          {isAdmin && onAdminClick && (
+                            <button
+                              onClick={() => { setShowUserMenu(false); onAdminClick(); }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-elevated)] rounded-md transition-colors"
+                            >
+                              <ShieldIcon />
+                              Admin Panel
+                            </button>
+                          )}
+                          {onLogout && (
+                            <button
+                              onClick={() => { setShowUserMenu(false); onLogout(); }}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
+                            >
+                              <LogoutIcon />
+                              Sign Out
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Standalone mode indicator */}
+              {isStandaloneMode && (
+                <Badge variant="warning" size="sm">
+                  Demo Mode
+                </Badge>
               )}
             </div>
           </div>
@@ -275,6 +283,11 @@ export default function Dashboard({ onAdminClick }: DashboardProps) {
                   <p className="text-[var(--color-text-muted)] mt-2">
                     Upload your order history to generate demand projections
                   </p>
+                  {isStandaloneMode && (
+                    <p className="text-sm text-amber-400 mt-2">
+                      Running in demo mode - data is processed locally in your browser
+                    </p>
+                  )}
                 </div>
                 <FileUpload />
                 
@@ -360,13 +373,6 @@ export default function Dashboard({ onAdminClick }: DashboardProps) {
           </div>
         </div>
       )}
-
-      {/* Change Password Modal */}
-      <ChangePasswordModal 
-        isOpen={showPasswordModal} 
-        onClose={() => setShowPasswordModal(false)} 
-      />
     </div>
   );
 }
-
