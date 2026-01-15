@@ -1,0 +1,32 @@
+{
+  "name": "inventory-projections",
+  "version": "1.0.0",
+  "description": "Inventory projection tool that analyzes historical order data and projects future inventory needs",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["inventory", "forecasting", "analytics"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "papaparse": "^5.5.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "recharts": "^2.15.2",
+    "vite": "^6.3.5",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/papaparse": "^5.3.15",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.5",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.4",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.3"
+  }
+}
